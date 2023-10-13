@@ -1,0 +1,43 @@
+#post-container {
+  /* display: grid; */
+  /* grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); */
+  gap: 20px;
+  padding: 20px;
+}
+
+.post {
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+  border-radius: 5px;
+  padding: 20px;
+  margin: 10px;
+  font-family: Arial, sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 2em;
+  color: white;
+
+  opacity: 0;
+  transition: opacity 1s ease-in-out;
+}
+
+.post.invisible {
+  opacity: 0;
+}
+
+.post.visible {
+  opacity: 1;
+}
+
+/* 
+@media only screen and (max-width: 1200px) {
+  .post {
+    width: 50%;
+  }
+}
+
+@media only screen and (max-width: 768px) {
+  .post {
+    width: 100%;
+  }
+} */
