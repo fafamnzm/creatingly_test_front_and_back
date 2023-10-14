@@ -16,9 +16,12 @@ function getContrastColor(hexcolor) {
 	return yiq >= 128 ? "black" : "white";
 }
 
+//? Mock posts
 const posts = [];
+const totalPosts = 25;
 
-for (let i = 0; i < 100; i++) {
+//? Creating 100 mock posts
+for (let i = 0; i < totalPosts; i++) {
 	const randomColor = getRandomColor();
 	const randomHeight = Math.floor(Math.random() * 400) + 100;
 	const post = {
@@ -37,14 +40,21 @@ const postsPerPage = 10;
 
 let timerId; // Declare the interal timeoutId outside the function
 
+//? Gradually add posts to the viewport
+//? based on the page and postsPerPage
 function addPosts() {
-	let start = currentPage * postsPerPage;
-	let end = start + postsPerPage;
+	const start = currentPage * postsPerPage;
+	//? we loaded all posts and we are keep scrolling the existing ones
+	if (start > posts.length) return clearInterval(timerId);
+
+	//? to cover index out of bounderies of posts in the following for loop
+	const end =
+		posts.length > start + postsPerPage ? start + postsPerPage : posts.length;
 
 	for (let i = start; i < end; i++) {
 		const post = posts[i];
-		const WaitTime = post.height * 10;
-		let div = document.createElement("div");
+		const WaitTime = post.height * 5;
+		const div = document.createElement("div");
 		div.className = "post";
 		div.style.height = `${post.height}px`;
 		div.style.backgroundColor = post.backgroundColor;
@@ -56,7 +66,7 @@ function addPosts() {
 		div.classList.add("invisible");
 
 		// Create an Intersection Observer to watch the post
-		let observer = new IntersectionObserver(function (entries, observer) {
+		const observer = new IntersectionObserver(function (entries, observer) {
 			entries.forEach(entry => {
 				if (entry.isIntersecting) {
 					// Add the 'visible' class to the post when it's in view
@@ -71,13 +81,13 @@ function addPosts() {
 		});
 
 		// Start observing the post
-
 		observer.observe(div);
 	}
 
 	currentPage++;
 }
 
+//? Automatically Scroll down
 function autoScroll() {
 	if (timerId) clearInterval(timerId); // clear the previous timer
 
@@ -90,7 +100,6 @@ function autoScroll() {
 
 		if (rect.bottom >= 10 && rect.bottom <= rect.height + 40) {
 			currentPost = post;
-			console.log(post.innerHTML, { top: rect.top, bottom: rect.bottom });
 			break;
 		}
 	}
@@ -98,26 +107,45 @@ function autoScroll() {
 	if (currentPost) {
 		const nextPost = postContainer.children[posts.indexOf(currentPost) + 1];
 
-		const timeoutAmount = rect?.bottom * 5 || 2000;
+		//? If we reach to the end of scroll
+		const EndOfScroll =
+			window.innerHeight + window.scrollY >= document.body.offsetHeight ||
+			false;
 
-		console.log({ rectBottom: rect?.bottom });
-		console.log({ timeoutAmount });
+		const remainingPixels = window.innerHeight - rect.bottom;
+
+		//? Wait 5ms for each px of the top post in viewport or 2 seconds by default
+		//? In case of the end of scroll. it will wait 5ms for each remaining pixel or 5 secs in total
+		const timeoutAmount = EndOfScroll
+			? remainingPixels * 5 || 5000
+			: rect?.bottom * 5 || 2000;
 
 		timerId = setTimeout(() => {
-			console.log("in interval");
-			if (nextPost) {
+			if (EndOfScroll) {
+				window.scrollTo({
+					top: 0,
+					behavior: "smooth",
+				});
+			} else if (nextPost) {
 				rect = currentPost.getBoundingClientRect();
 				if (timerId) clearInterval(timerId);
+
+				//? Scroll to 5px above the top post from the viewport
 				window.scrollTo({
 					top: window.scrollY + rect.bottom - 5,
 					behavior: "smooth",
 				});
 				autoScroll();
-			} else autoScroll(); //window.scrollTo(0, 0);
+			} else {
+				window.scrollTo({ top: 0, behavior: "smooth" });
+			}
 		}, timeoutAmount); // auto scroll based on the height of the post
-	} else window.scrollTo(0, 0);
+	} else {
+		window.scrollTo({ top: 0, behavior: "smooth" });
+	}
 }
 
+//? A div that works as an intersection div
 let sentinel = document.createElement("div");
 sentinel.className = "sentinel";
 postContainer.appendChild(sentinel);
@@ -138,10 +166,16 @@ let observer = new IntersectionObserver(function (entries, observer) {
 
 observer.observe(sentinel);
 
-addPosts(); // Initial posts before
+//? Initial posts before
+addPosts();
 
+//? Stop Autoscroll if user starts scrolling manually
 window.addEventListener("scroll", () =>
 	timerId ? clearInterval(timerId) : ""
 );
+
+//? when scrolling ends whether by the user or autoScroll, the autoScroll is called again
 window.addEventListener("scrollend", autoScroll);
+
+//? Start Scrolling automatically even when the user has not scrolled yet
 autoScroll();
